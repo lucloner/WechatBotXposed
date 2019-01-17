@@ -12,10 +12,9 @@ class Aichat(private val msg: String, private val userid: String?) {
         var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid)) ?: return "[BOTSKIP]"
         try {
             var js = JSONObject(s)
-            var jsa = js.getJSONArray("resault")
-            js = jsa.getJSONObject(0)
+            js = js.getJSONObject("resault")
             SESSIONS.put(userid, js.getString("session_id"))
-            jsa = js.getJSONArray("response_list")
+            var jsa = js.getJSONArray("response_list")
             js = JSONObject(jsa.getString(0))
             jsa = js.getJSONArray("action_list")
             js = jsa.getJSONObject(0)
