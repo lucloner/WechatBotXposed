@@ -4,6 +4,7 @@ import com.blanke.wechatbotxposed.hook.SendMsgHooker.wxMsgSplitStr
 import com.gh0u1l5.wechatmagician.spellbook.interfaces.IMessageStorageHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
+import net.vicp.biggee.xposed.wechat.Aichat
 
 object WechatMessageHook : IMessageStorageHook {
     override fun onMessageStorageCreated(storage: Any) {
@@ -24,7 +25,18 @@ object WechatMessageHook : IMessageStorageHook {
         }
         if (field_type == 1) { //文本消息
             // field_content 就是消息内容，可以接入图灵机器人回复
-            val replyContent = "reply: \n$field_content"
+            var s = ""
+            try {
+                s = field_content ?: return
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            s = Aichat(s, field_talker).toString()
+            if (s.startsWith("[BOTSKIP")) {
+                return
+            }
+
+            val replyContent = "[bot]$s"
             Objects.ChattingFooterEventImpl?.apply {
                 // 将 wx_id 和 回复的内容用分隔符分开
                 val content = "$field_talker$wxMsgSplitStr$replyContent"
