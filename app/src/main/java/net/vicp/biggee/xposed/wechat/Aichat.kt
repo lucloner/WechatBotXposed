@@ -3,22 +3,41 @@ package net.vicp.biggee.xposed.wechat
 import com.baidu.ai.aip.auth.AuthService
 import com.baidu.ai.aip.unit.UnitService
 import org.json.JSONObject
+import kotlin.random.Random
 
 class Aichat(private val msg: String, private val userid: String?) {
 
+    fun processCMD() {
+        CMDS.forEach {
+            if (msg.contains("[$it]")) {
+                when (it) {
+                    BOT_CMD_ON -> BOTON = true
+                    BOT_CMD_OFF -> BOTON = false
+                    BOT_CMD_SKIP -> BOTSKIP = true
+                }
+            }
+        }
+    }
+
     override fun toString(): String {
+        if (BOTSKIP) {
+            BOTSKIP = false
+            return "[$BOT_CMD_SKIP]"
+        }
         val sessionid = SESSIONS.get(userid) ?: ""
         val userid = this.userid ?: ""
-        var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid)) ?: return "[BOTSKIP]"
+        var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid))
+                ?: return "[$BOT_CMD_SKIP]"
         try {
-            var js = JSONObject(s)
-            js = js.getJSONObject("result")
+            val js = JSONObject(s).getJSONObject("result")
             SESSIONS.put(userid, js.getString("session_id"))
-            var jsa = js.getJSONArray("response_list")
-            js = JSONObject(jsa.getString(0))
-            jsa = js.getJSONArray("action_list")
-            js = jsa.getJSONObject(0)
-            s = js.getString("say")
+            val jsa = js.getJSONArray("response_list").getJSONObject(0).getJSONArray("action_list")
+            try {
+                val i = RANDOM.nextInt(jsa.length())
+                s = jsa.getJSONObject(i).getString("say")
+            } catch (_: Exception) {
+                s = jsa.getJSONObject(0).getString("say")
+            }
         } catch (e: Exception) {
             s = e.localizedMessage
         }
@@ -35,7 +54,14 @@ class Aichat(private val msg: String, private val userid: String?) {
         const val TOKEN_URL = "$TOKEN_BASE_URL?grant_type=$GRANTTYPE&client_id=$APIKEY&client_secret=$SECRETKEY"
         const val SERVICEID = "S12624"
         const val LOGID = "WeChatExposed"
+        const val BOT_CMD_SKIP = "BOTSKIP"
+        const val BOT_CMD_ON = "BOTON"
+        const val BOT_CMD_OFF = "BOTOFF"
+        val CMDS = arrayOf(BOT_CMD_ON, BOT_CMD_OFF, BOT_CMD_SKIP)
         val SESSIONS: HashMap<String, String> by lazy { HashMap<String, String>() }
         val TOKEN: String by lazy { AuthService.auth ?: "" }
+        val RANDOM by lazy { Random(System.currentTimeMillis()) }
+        var BOTON = true
+        var BOTSKIP = false
     }
 }

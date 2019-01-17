@@ -21,6 +21,12 @@ object WechatMessageHook : IMessageStorageHook {
         XposedBridge.log("field_content=$field_content,field_talker=$field_talker," +
                 "field_type=$field_type,field_isSend=$field_isSend")
         if (field_isSend == 1) {// 代表自己发出的，不处理
+            if (field_type == 1 && field_content != null) {
+                Aichat(field_content, field_talker).processCMD()
+            }
+            return
+        }
+        if (!Aichat.BOTON) {
             return
         }
         if (field_type == 1) { //文本消息
@@ -32,7 +38,7 @@ object WechatMessageHook : IMessageStorageHook {
                 e.printStackTrace()
             }
             s = Aichat(s, field_talker).toString()
-            if (s.startsWith("[BOTSKIP")) {
+            if (s.startsWith("[${Aichat.BOT_CMD_SKIP}")) {
                 return
             }
 
