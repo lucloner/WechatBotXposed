@@ -16,10 +16,12 @@ class Aichat(private val msg: String, private val userid: String?) {
                     BOT_CMD_OFF -> BOTON = false
                     BOT_CMD_SKIP -> BOTSKIP = true
                     BOT_CMD_ONTHIS -> {
-                        OFFLIST.add(SESSIONMAP[userid] ?: return)
+//                        OFFLIST.add(SESSIONMAP[userid] ?: return)
+                        OFFLIST.add(userid ?: "")
                     }
                     BOT_CMD_OFFTHIS -> {
-                        OFFLIST.remove(SESSIONMAP[userid] ?: return)
+//                        OFFLIST.remove(SESSIONMAP[userid] ?: return)
+                        OFFLIST.remove(userid)
                     }
                     BOT_CMD_CLEAROFFLIST -> OFFLIST.clear()
                     BOT_CMD_CLEARSESSIONS -> SESSIONS.clear()
@@ -45,7 +47,7 @@ class Aichat(private val msg: String, private val userid: String?) {
             BOTSKIP = false
             return "[$BOT_CMD_SKIP]"
         }
-        if (OFFLIST.contains(userid)) {
+        if (userid in OFFLIST) {
             return "[$BOT_CMD_SKIP]"
         }
         var userid = this.userid ?: ""
@@ -79,7 +81,7 @@ class Aichat(private val msg: String, private val userid: String?) {
             s = e.localizedMessage
             OFFLIST.add(userid)
         }
-        return "$s[${this.userid}]"
+        return s//"$s[${this.userid}]"
     }
 
     companion object {
