@@ -37,7 +37,10 @@ class Aichat(private val msg: String, private val userid: String?) {
     private fun convertGroupMSG(gM: String, gN: String): Array<String> {
         val g = gN.split("@")[0]
         val u = gM.split(":")[0]
-        val msg = gM.substring(u.length + 1)
+        if (gM.length < u.length + 2) {
+            return arrayOf("", "$u@$g")
+        }
+        val msg = gM.substring(u.length + 2)
         return arrayOf(msg, "$u@$g")
     }
 
@@ -58,7 +61,7 @@ class Aichat(private val msg: String, private val userid: String?) {
             msg = r[0]
             userid = r[1]
             sessionid = SESSIONS.get(userid) ?: ""
-            XposedBridge.log("Aichat groupConvert uid=$userid,msg=$msg")
+            XposedBridge.log("Aichat groupConvert uid=$userid,msg=$msg,msglength=${msg.length}")
         }
         var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid))
                 ?: return "[$BOT_CMD_SKIP]"
