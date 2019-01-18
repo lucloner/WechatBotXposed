@@ -22,10 +22,11 @@ object WechatMessageHook : IMessageStorageHook {
                 "field_type=$field_type,field_isSend=$field_isSend")
         if (field_isSend == 1) {// 代表自己发出的，不处理
             if (field_type == 1 && !field_content.isNullOrEmpty() && !field_talker.isNullOrEmpty()) {
-                if (field_content.startsWith("[${Aichat.BOT_TAG}]")) {
-                    val index = field_content.lastIndexOf("[")
-                    val tail = field_content.substring(index + 1, field_content.length - 2)
-                    Aichat.SESSIONMAP[field_talker] = tail
+                try {
+                    Aichat.SESSIONMAP[field_talker] = field_content.split("[").last().dropLast(1)
+                } catch (_: Exception) {
+                }
+                if (field_content.contains("[${Aichat.BOT_TAG}]")) {
                     return
                 }
                 Aichat(field_content, field_talker).processCMD()
