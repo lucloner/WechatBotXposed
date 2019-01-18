@@ -41,7 +41,8 @@ class Aichat(private val msg: String, private val userid: String?) {
             return "[$BOT_CMD_SKIP]"
         }
         val sessionid = SESSIONS.get(userid) ?: ""
-        val userid = this.userid ?: ""
+        var userid = this.userid ?: ""
+        userid = userid.replace("@chatroom", "chatroom")
         var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid))
                 ?: return "[$BOT_CMD_SKIP]"
         XposedBridge.log("Aichat uid=$userid,msg=$msg,reply=$s")
