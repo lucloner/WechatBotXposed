@@ -21,7 +21,13 @@ object WechatMessageHook : IMessageStorageHook {
         XposedBridge.log("field_content=$field_content,field_talker=$field_talker," +
                 "field_type=$field_type,field_isSend=$field_isSend")
         if (field_isSend == 1) {// 代表自己发出的，不处理
-            if (field_type == 1 && field_content != null) {
+            if (field_type == 1 && !field_content.isNullOrEmpty() && !field_talker.isNullOrEmpty()) {
+                if (field_content.startsWith("[${Aichat.BOT_TAG}]")) {
+                    val index = field_content.lastIndexOf("[")
+                    val tail = field_content.substring(index + 1, field_content.length - 2)
+                    Aichat.SESSIONMAP[field_talker] = tail
+                    return
+                }
                 Aichat(field_content, field_talker).processCMD()
             }
             return
@@ -42,7 +48,7 @@ object WechatMessageHook : IMessageStorageHook {
                 return
             }
 
-            val replyContent = "[bot]$s"
+            val replyContent = "[${Aichat.BOT_TAG}]$s"
             Objects.ChattingFooterEventImpl?.apply {
                 // 将 wx_id 和 回复的内容用分隔符分开
                 val content = "$field_talker$wxMsgSplitStr$replyContent"

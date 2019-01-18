@@ -16,16 +16,10 @@ class Aichat(private val msg: String, private val userid: String?) {
                     BOT_CMD_OFF -> BOTON = false
                     BOT_CMD_SKIP -> BOTSKIP = true
                     BOT_CMD_ONTHIS -> {
-                        if (userid == null) {
-                            return
-                        }
-                        OFFLIST.add(userid)
+                        OFFLIST.add(SESSIONMAP[userid] ?: return)
                     }
                     BOT_CMD_OFFTHIS -> {
-                        if (userid == null) {
-                            return
-                        }
-                        OFFLIST.remove(userid)
+                        OFFLIST.remove(SESSIONMAP[userid] ?: return)
                     }
                     BOT_CMD_CLEAROFFLIST -> OFFLIST.clear()
                     BOT_CMD_CLEARSESSIONS -> SESSIONS.clear()
@@ -80,7 +74,7 @@ class Aichat(private val msg: String, private val userid: String?) {
             s = e.localizedMessage
             OFFLIST.add(userid)
         }
-        return s
+        return "$s[$userid]"
     }
 
     companion object {
@@ -93,6 +87,7 @@ class Aichat(private val msg: String, private val userid: String?) {
         const val TOKEN_URL = "$TOKEN_BASE_URL?grant_type=$GRANTTYPE&client_id=$APIKEY&client_secret=$SECRETKEY"
         const val SERVICEID = "S12624"
         const val LOGID = "WeChatExposed"
+        const val BOT_TAG = "bot"
         const val BOT_CMD_SKIP = "BOTSKIP"
         const val BOT_CMD_ON = "BOTON"
         const val BOT_CMD_OFF = "BOTOFF"
@@ -110,6 +105,7 @@ class Aichat(private val msg: String, private val userid: String?) {
                 BOT_CMD_CLEARSESSIONS
         )
         val SESSIONS: HashMap<String, String> by lazy { HashMap<String, String>() }
+        val SESSIONMAP: HashMap<String, String> by lazy { HashMap<String, String>() }
         val OFFLIST: HashSet<String> by lazy { HashSet<String>() }
         val TOKEN: String by lazy { AuthService.auth ?: "" }
         val RANDOM by lazy { Random(System.currentTimeMillis()) }
