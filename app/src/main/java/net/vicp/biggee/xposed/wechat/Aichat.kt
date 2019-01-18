@@ -117,11 +117,11 @@ class Aichat(private val msg: String, private val userid: String?) {
         )
         val SESSIONS: HashMap<String, String> by lazy { HashMap<String, String>() }
         val SESSIONMAP: HashMap<String, String> by lazy { HashMap<String, String>() }
-        val OFFLIST: HashSet<String> by lazy { HashSet<String>() }
+        val OFFLIST: ArrayList<String> by lazy { ArrayList<String>() }
         val TOKEN: String by lazy { AuthService.auth ?: "" }
         val RANDOM by lazy { Random(System.currentTimeMillis()) }
         var BOTON = true
         var BOTSKIP = false
-        var BOTONROOM = true
+        var BOTONROOM = false
     }
 }
