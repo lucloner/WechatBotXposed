@@ -2,6 +2,7 @@ package net.vicp.biggee.xposed.wechat
 
 import com.baidu.ai.aip.auth.AuthService
 import com.baidu.ai.aip.unit.UnitService
+import de.robv.android.xposed.XposedBridge
 import org.json.JSONObject
 import kotlin.random.Random
 
@@ -43,6 +44,7 @@ class Aichat(private val msg: String, private val userid: String?) {
         val userid = this.userid ?: ""
         var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid))
                 ?: return "[$BOT_CMD_SKIP]"
+        XposedBridge.log("Aichat uid=$userid,msg=$msg,reply=$s")
         try {
             val js = JSONObject(s).getJSONObject("result")
             SESSIONS.put(userid, js.getString("session_id"))
@@ -57,6 +59,7 @@ class Aichat(private val msg: String, private val userid: String?) {
             s = e.localizedMessage
             OFFLIST.add(userid)
         }
+
         return s
     }
 
