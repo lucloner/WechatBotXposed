@@ -9,7 +9,6 @@ import kotlin.random.Random
 class Aichat(private val msg: String, private val userid: String?) {
 
     fun processCMD() {
-        XposedBridge.log("Aichat processCMD uid=$userid,msg=$msg,msglength=${msg.length}")
         val userid = this.userid ?: ""
         CMDS.forEach {
             if (msg.contains("[$it]")) {
@@ -28,6 +27,7 @@ class Aichat(private val msg: String, private val userid: String?) {
                 }
             }
         }
+        XposedBridge.log("Aichat processCMD uid=$userid,msg=$msg,msglength=${msg.length},offlist=$OFFLIST")
     }
 
     private fun getGroupName(gN: String): String {
@@ -49,10 +49,11 @@ class Aichat(private val msg: String, private val userid: String?) {
     }
 
     override fun toString(): String {
+        var TOKEN = Aichat.TOKEN
         if (TOKEN.equals("") || AuthService.expires_in < 60L) {
             TOKEN = AuthService.auth ?: ""
         }
-        
+
         if (TOKEN.equals("")) {
             return "[$BOT_CMD_SKIP]"
         }
@@ -75,6 +76,7 @@ class Aichat(private val msg: String, private val userid: String?) {
             sessionid = SESSIONS[userid] ?: ""
             XposedBridge.log("Aichat groupConvert uid=$userid,msg=$msg,msglength=${msg.length}")
         }
+        XposedBridge.log("Aichat sessionid=$sessionid")
         var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid))
                 ?: return "[$BOT_CMD_SKIP]"
         XposedBridge.log("Aichat reply=$s")
@@ -105,6 +107,7 @@ class Aichat(private val msg: String, private val userid: String?) {
         const val TOKEN_URL = "$TOKEN_BASE_URL?grant_type=$GRANTTYPE&client_id=$APIKEY&client_secret=$SECRETKEY"
         const val SERVICEID = "S12624"
         const val LOGID = "WeChatExposed"
+        const val BOTTAG = "[bot]"
         const val BOT_CMD_SKIP = "BOTSKIP"
         const val BOT_CMD_ON = "BOTON"
         const val BOT_CMD_OFF = "BOTOFF"
@@ -123,12 +126,9 @@ class Aichat(private val msg: String, private val userid: String?) {
         )
         val SESSIONS: HashMap<String, String> = HashMap()
         val OFFLIST: HashSet<String> = HashSet()
-        var TOKEN = ""
+        val TOKEN by lazy { AuthService.auth ?: "" }
         val RANDOM = Random(System.currentTimeMillis())
         var BOTON = true
         var BOTSKIP = false
-        fun loadTOKEN() {
-            TOKEN = AuthService.auth ?: ""
-        }
     }
 }
