@@ -27,9 +27,18 @@ class Aichat(private val msg: String, private val userid: String?) {
                         }
                         OFFLIST.remove(userid)
                     }
+                    BOT_CMD_CLEAROFFLIST -> OFFLIST.clear()
+                    BOT_CMD_CLEARSESSIONS -> SESSIONS.clear()
                 }
             }
         }
+    }
+
+    private fun convertGroupMSG(gM: String, gN: String): Array<String> {
+        val g = gN.split("@")[0]
+        val u = gM.split(":")[0]
+        val msg = gM.substring(u.length + 1)
+        return arrayOf(msg, "$u@$g")
     }
 
     override fun toString(): String {
@@ -40,12 +49,20 @@ class Aichat(private val msg: String, private val userid: String?) {
         if (OFFLIST.contains(userid)) {
             return "[$BOT_CMD_SKIP]"
         }
-        val sessionid = SESSIONS.get(userid) ?: ""
+        var sessionid = SESSIONS.get(userid) ?: ""
         var userid = this.userid ?: ""
-        userid = userid.replace("@chatroom", "chatroom")
+        var msg = this.msg
+        XposedBridge.log("Aichat uid=$userid,msg=$msg")
+        if (userid.contains("chatroom")) {
+            val r = convertGroupMSG(msg, userid)
+            msg = r[0]
+            userid = r[1]
+            sessionid = SESSIONS.get(userid) ?: ""
+            XposedBridge.log("Aichat groupConvert uid=$userid,msg=$msg")
+        }
         var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid))
                 ?: return "[$BOT_CMD_SKIP]"
-        XposedBridge.log("Aichat uid=$userid,msg=$msg,reply=$s")
+        XposedBridge.log("Aichat reply=$s")
         try {
             val js = JSONObject(s).getJSONObject("result")
             SESSIONS.put(userid, js.getString("session_id"))
@@ -60,7 +77,6 @@ class Aichat(private val msg: String, private val userid: String?) {
             s = e.localizedMessage
             OFFLIST.add(userid)
         }
-
         return s
     }
 
@@ -79,7 +95,17 @@ class Aichat(private val msg: String, private val userid: String?) {
         const val BOT_CMD_OFF = "BOTOFF"
         const val BOT_CMD_OFFTHIS = "BOTOFFTHIS"
         const val BOT_CMD_ONTHIS = "BOTONTHIS"
-        val CMDS = arrayOf(BOT_CMD_ON, BOT_CMD_OFF, BOT_CMD_SKIP, BOT_CMD_ONTHIS, BOT_CMD_OFFTHIS)
+        const val BOT_CMD_CLEAROFFLIST = "CLEAROFFLIST"
+        const val BOT_CMD_CLEARSESSIONS = "CLEARSESSIONS"
+        val CMDS = arrayOf(
+                BOT_CMD_ON,
+                BOT_CMD_OFF,
+                BOT_CMD_SKIP,
+                BOT_CMD_ONTHIS,
+                BOT_CMD_OFFTHIS,
+                BOT_CMD_CLEAROFFLIST,
+                BOT_CMD_CLEARSESSIONS
+        )
         val SESSIONS: HashMap<String, String> by lazy { HashMap<String, String>() }
         val OFFLIST: HashSet<String> by lazy { HashSet<String>() }
         val TOKEN: String by lazy { AuthService.auth ?: "" }
