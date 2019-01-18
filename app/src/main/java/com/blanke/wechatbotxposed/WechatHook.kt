@@ -7,9 +7,11 @@ import com.gh0u1l5.wechatmagician.spellbook.util.BasicUtil
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import net.vicp.biggee.xposed.wechat.ErrorHandler
 
 class WechatHook : IXposedHookLoadPackage {
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
+        Thread.setDefaultUncaughtExceptionHandler(ErrorHandler)
         BasicUtil.tryVerbosely {
             if (SpellBook.isImportantWechatProcess(lpparam)) {
                 XposedBridge.log("Hello Wechat!")
