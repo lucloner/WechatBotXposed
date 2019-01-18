@@ -14,6 +14,18 @@ class Aichat(private val msg: String, private val userid: String?) {
                     BOT_CMD_ON -> BOTON = true
                     BOT_CMD_OFF -> BOTON = false
                     BOT_CMD_SKIP -> BOTSKIP = true
+                    BOT_CMD_ONTHIS -> {
+                        if (userid == null) {
+                            return
+                        }
+                        OFFLIST.add(userid)
+                    }
+                    BOT_CMD_OFFTHIS -> {
+                        if (userid == null) {
+                            return
+                        }
+                        OFFLIST.remove(userid)
+                    }
                 }
             }
         }
@@ -22,6 +34,9 @@ class Aichat(private val msg: String, private val userid: String?) {
     override fun toString(): String {
         if (BOTSKIP) {
             BOTSKIP = false
+            return "[$BOT_CMD_SKIP]"
+        }
+        if (OFFLIST.contains(userid)) {
             return "[$BOT_CMD_SKIP]"
         }
         val sessionid = SESSIONS.get(userid) ?: ""
@@ -40,6 +55,7 @@ class Aichat(private val msg: String, private val userid: String?) {
             }
         } catch (e: Exception) {
             s = e.localizedMessage
+            OFFLIST.add(userid)
         }
         return s
     }
@@ -57,8 +73,11 @@ class Aichat(private val msg: String, private val userid: String?) {
         const val BOT_CMD_SKIP = "BOTSKIP"
         const val BOT_CMD_ON = "BOTON"
         const val BOT_CMD_OFF = "BOTOFF"
-        val CMDS = arrayOf(BOT_CMD_ON, BOT_CMD_OFF, BOT_CMD_SKIP)
+        const val BOT_CMD_OFFTHIS = "BOTOFFTHIS"
+        const val BOT_CMD_ONTHIS = "BOTONTHIS"
+        val CMDS = arrayOf(BOT_CMD_ON, BOT_CMD_OFF, BOT_CMD_SKIP, BOT_CMD_ONTHIS, BOT_CMD_OFFTHIS)
         val SESSIONS: HashMap<String, String> by lazy { HashMap<String, String>() }
+        val OFFLIST: HashSet<String> by lazy { HashSet<String>() }
         val TOKEN: String by lazy { AuthService.auth ?: "" }
         val RANDOM by lazy { Random(System.currentTimeMillis()) }
         var BOTON = true
