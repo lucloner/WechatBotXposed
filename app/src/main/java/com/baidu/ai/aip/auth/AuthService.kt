@@ -73,6 +73,10 @@ object AuthService {
              */
             System.err.println("result:$result")
             val jsonObject = JSONObject(result)
+            try {
+                expires_in = jsonObject.getString("expires_in").toLong()
+            } catch (_: Exception) {
+            }
             return jsonObject.getString("access_token")
         } catch (e: Exception) {
             System.err.printf("获取token失败！")
@@ -81,5 +85,7 @@ object AuthService {
 
         return null
     }
+
+    var expires_in = 2592000L
 
 }

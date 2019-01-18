@@ -9,6 +9,8 @@ import kotlin.random.Random
 class Aichat(private val msg: String, private val userid: String?) {
 
     fun processCMD() {
+        XposedBridge.log("Aichat processCMD uid=$userid,msg=$msg,msglength=${msg.length}")
+        val userid = this.userid ?: ""
         CMDS.forEach {
             if (msg.contains("[$it]")) {
                 when (it) {
@@ -16,16 +18,10 @@ class Aichat(private val msg: String, private val userid: String?) {
                     BOT_CMD_OFF -> BOTON = false
                     BOT_CMD_SKIP -> BOTSKIP = true
                     BOT_CMD_ONTHIS -> {
-                        if (userid == null) {
-                            return
-                        }
-                        OFFLIST.add(userid)
+                        OFFLIST.add(getGroupName(userid))
                     }
                     BOT_CMD_OFFTHIS -> {
-                        if (userid == null) {
-                            return
-                        }
-                        OFFLIST.remove(userid)
+                        OFFLIST.remove(getGroupName(userid))
                     }
                     BOT_CMD_CLEAROFFLIST -> OFFLIST.clear()
                     BOT_CMD_CLEARSESSIONS -> SESSIONS.clear()
@@ -34,8 +30,16 @@ class Aichat(private val msg: String, private val userid: String?) {
         }
     }
 
+    private fun getGroupName(gN: String): String {
+        return if (gN.contains("chatroom")) {
+            gN.split("@")[0]
+        } else {
+            gN
+        }
+    }
+
     private fun convertGroupMSG(gM: String, gN: String): Array<String> {
-        val g = gN.split("@")[0]
+        val g = getGroupName(gN)
         val u = gM.split(":")[0]
         if (gM.length < u.length + 2) {
             return arrayOf("", "$u@$g")
@@ -45,22 +49,30 @@ class Aichat(private val msg: String, private val userid: String?) {
     }
 
     override fun toString(): String {
+        if (TOKEN.equals("") || AuthService.expires_in < 60L) {
+            TOKEN = AuthService.auth ?: ""
+        }
+        
+        if (TOKEN.equals("")) {
+            return "[$BOT_CMD_SKIP]"
+        }
+
         if (BOTSKIP) {
             BOTSKIP = false
             return "[$BOT_CMD_SKIP]"
         }
-        if (OFFLIST.contains(userid)) {
+        var userid = this.userid ?: ""
+        if (OFFLIST.contains(getGroupName(userid))) {
             return "[$BOT_CMD_SKIP]"
         }
-        var sessionid = SESSIONS.get(userid) ?: ""
-        var userid = this.userid ?: ""
+        var sessionid = SESSIONS[userid] ?: ""
         var msg = this.msg
         XposedBridge.log("Aichat uid=$userid,msg=$msg")
         if (userid.contains("chatroom")) {
             val r = convertGroupMSG(msg, userid)
             msg = r[0]
             userid = r[1]
-            sessionid = SESSIONS.get(userid) ?: ""
+            sessionid = SESSIONS[userid] ?: ""
             XposedBridge.log("Aichat groupConvert uid=$userid,msg=$msg,msglength=${msg.length}")
         }
         var s = UnitService.utterance(arrayOf(LOGID, sessionid, msg, userid))
@@ -68,17 +80,17 @@ class Aichat(private val msg: String, private val userid: String?) {
         XposedBridge.log("Aichat reply=$s")
         try {
             val js = JSONObject(s).getJSONObject("result")
-            SESSIONS.put(userid, js.getString("session_id"))
+            SESSIONS[userid] = js.getString("session_id")
             val jsa = js.getJSONArray("response_list").getJSONObject(0).getJSONArray("action_list")
-            try {
+            s = try {
                 val i = RANDOM.nextInt(jsa.length())
-                s = jsa.getJSONObject(i).getString("say")
+                jsa.getJSONObject(i).getString("say")
             } catch (_: Exception) {
-                s = jsa.getJSONObject(0).getString("say")
+                jsa.getJSONObject(0).getString("say")
             }
         } catch (e: Exception) {
             s = e.localizedMessage
-            OFFLIST.add(userid)
+            OFFLIST.add(getGroupName(userid))
         }
         return s
     }
@@ -98,8 +110,8 @@ class Aichat(private val msg: String, private val userid: String?) {
         const val BOT_CMD_OFF = "BOTOFF"
         const val BOT_CMD_OFFTHIS = "BOTOFFTHIS"
         const val BOT_CMD_ONTHIS = "BOTONTHIS"
-        const val BOT_CMD_CLEAROFFLIST = "CLEAROFFLIST"
-        const val BOT_CMD_CLEARSESSIONS = "CLEARSESSIONS"
+        const val BOT_CMD_CLEAROFFLIST = "BOTCLEAROFFLIST"
+        const val BOT_CMD_CLEARSESSIONS = "BOTCLEARSESSIONS"
         val CMDS = arrayOf(
                 BOT_CMD_ON,
                 BOT_CMD_OFF,
@@ -109,11 +121,14 @@ class Aichat(private val msg: String, private val userid: String?) {
                 BOT_CMD_CLEAROFFLIST,
                 BOT_CMD_CLEARSESSIONS
         )
-        val SESSIONS: HashMap<String, String> by lazy { HashMap<String, String>() }
-        val OFFLIST: HashSet<String> by lazy { HashSet<String>() }
-        val TOKEN: String by lazy { AuthService.auth ?: "" }
-        val RANDOM by lazy { Random(System.currentTimeMillis()) }
+        val SESSIONS: HashMap<String, String> = HashMap()
+        val OFFLIST: HashSet<String> = HashSet()
+        var TOKEN = ""
+        val RANDOM = Random(System.currentTimeMillis())
         var BOTON = true
         var BOTSKIP = false
+        fun loadTOKEN() {
+            TOKEN = AuthService.auth ?: ""
+        }
     }
 }
