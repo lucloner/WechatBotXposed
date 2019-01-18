@@ -10,7 +10,7 @@ class Aichat(private val msg: String, private val userid: String?) {
 
     fun processCMD() {
         CMDS.forEach {
-            if (msg.contains("[$it]")) {
+            if ("[$it]" in msg) {
                 when (it) {
                     BOT_CMD_ON -> BOTON = true
                     BOT_CMD_OFF -> BOTON = false
@@ -51,13 +51,13 @@ class Aichat(private val msg: String, private val userid: String?) {
             return "[$BOT_CMD_SKIP]"
         }
         var userid = this.userid ?: ""
-        if (!BOTONROOM && userid.contains("chatroom")) {
+        if (!BOTONROOM && "chatroom" in userid) {
             return "[$BOT_CMD_SKIP]"
         }
         var sessionid = SESSIONS[userid] ?: ""
         var msg = this.msg
         XposedBridge.log("Aichat uid=$userid,msg=$msg")
-        if (userid.contains("chatroom")) {
+        if ("chatroom" in userid) {
             val r = convertGroupMSG(msg, userid)
             msg = r[0]
             userid = r[1]

@@ -26,7 +26,7 @@ object WechatMessageHook : IMessageStorageHook {
 //                    Aichat.SESSIONMAP[field_talker] = field_content.split("[").last().dropLast(1)
 //                } catch (_: Exception) {
 //                }
-                if (field_content.contains("[${Aichat.BOT_TAG}]")) {
+                if ("[${Aichat.BOT_TAG}]" in field_content) {
                     return
                 }
                 Aichat(field_content, field_talker).processCMD()
